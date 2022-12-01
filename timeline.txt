@@ -1,3 +1,19 @@
 
-11/11 : Milestone
-12/07: Final Project
+12/09: Final Project
+
+
+Feature list:
+['gameId', 'playId', 'frameId', 'nflId', 'team_indicator', 'adj_x', 'adj_y', 's', 'a', 'adj_o', 'adj_dir']
+
+#####################
+- Create dataset, in order
+- Split into train, val, test
+- Preprocess the training set
+    - Standardize
+    - Shuffle (shuffle both x & y)
+    - Don't consider gameId, etc.
+- Preds
+
+
+
+
