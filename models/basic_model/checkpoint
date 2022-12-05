@@ -1,2 +1,0 @@
-model_checkpoint_path: "epochs10.ckpt"
-all_model_checkpoint_paths: "epochs10.ckpt"
