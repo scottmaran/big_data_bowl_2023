@@ -121,7 +121,8 @@ print(f"input (X) shape = {x_train_input.shape}")
 print(f"y shape = {y_train.shape}")
 
 NUM_EPOCHS = 10
-history = model.fit(x_train_input, y_train, epochs=NUM_EPOCHS, batch_size=1)
+BATCH_SIZE = 16
+history = model.fit(x_train_input, y_train, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE)
 print(f"model done training")
 
 model_string = f"./rnn_model1/weights/weights_epochs{NUM_EPOCHS}"
