@@ -10,39 +10,40 @@ import tensorflow.keras.metrics as metrics
 
 import keras.backend as K
 
-def my_loss(y_true, y_pred):
+def my_loss(y_true, y_output):
     bce = tf.keras.losses.CategoricalCrossentropy(from_logits=False)
     mse = tf.keras.losses.MeanSquaredError()
-    #tf.print(y_true)
-    true = K.reshape(y_true, (-1, y_true.shape[-1]))
-    #tf.print(true)
-    pred = K.reshape(y_pred, (-1, y_pred.shape[-1]))
-    return bce(true[:,0:-1], pred[:,0:-1]) + mse(true[:,-1], pred[:,-1])
+    
+    # get mse of only true positives
+    true_sack_mask = y_true[:1]==1
+    # checked, mse function can take in array of length zero
+    return bce(y_true[:,0:-1], y_output[:,0:-1]) + mse(y_true[true_sack_mask], y_output[true_sack_mask])
 
-def bce_metric(y_true, y_pred):
-    true = K.reshape(y_true, (-1, y_true.shape[-1]))
-    pred = K.reshape(y_pred, (-1, y_pred.shape[-1]))
-    return K.mean(K.binary_crossentropy(true[:,0:-1], pred[:,0:-1], from_logits=False))
+def bce_metric(y_true, y_output):
+    return K.mean(K.binary_crossentropy(y_true[:,0:-1], y_output[:,0:-1], from_logits=False))
 
-def mse_metric(y_true, y_pred):
-    true = K.reshape(y_true, (-1, y_true.shape[-1]))
-    pred = K.reshape(y_pred, (-1, y_pred.shape[-1]))
-    return K.mean(K.square(true[:,-1] - pred[:,-1]), axis=-1)
+def mse_metric(y_true, y_output):
+    # get mse of only true positives
+    true_sack_mask = y_true[:1]==1
+    return K.mean(K.square(y_true[true_sack_mask] - y_output[true_sack_mask]), axis=-1)
+    # return K.mean(K.square(y_pred[:,-1] - y_true[:,-1]), axis=-1)
+    
+def accuracy_metric(y_true, y_output):
+    preds = K.cast(K.argmax(y_output[:,0:-1], axis=-1), 'float32')
+    return K.mean(K.cast(y_true[:,1] == preds, 'float32'))
 
 # https://stackoverflow.com/questions/43547402/how-to-calculate-f1-macro-in-keras
-def recall(y_true, y_pred):
-    true = K.reshape(y_true, (-1, y_true.shape[-1]))
-    pred = K.reshape(y_pred, (-1, y_pred.shape[-1]))
-    true_positives = K.sum(K.round(K.clip(true[:,1] * pred[:,1], 0, 1)))
+def recall(y_true, y_output):
+    preds = K.cast(K.argmax(y_output[:,0:-1], axis=-1), 'float32')
+    true_positives = K.sum(K.round(K.clip(y_true[:,1] * preds, 0, 1)))
     possible_positives = K.sum(K.round(K.clip(y_true[:,1], 0, 1)))
     recall = true_positives / (possible_positives + K.epsilon())
     return recall
 
-def precision(y_true, y_pred):
-    true = K.reshape(y_true, (-1, y_true.shape[-1]))
-    pred = K.reshape(y_pred, (-1, y_pred.shape[-1]))
-    true_positives = K.sum(K.round(K.clip(true[:,1] * pred[:,1], 0, 1)))
-    predicted_positives = K.sum(K.round(K.clip(pred[:,1], 0, 1)))
+def precision(y_true, y_output):
+    preds = K.cast(K.argmax(y_output[:,0:-1], axis=-1), 'float32')
+    true_positives = K.sum(K.round(K.clip(y_true[:,1] * preds, 0, 1)))
+    predicted_positives = K.sum(K.round(K.clip(preds, 0, 1)))
     precision = true_positives / (predicted_positives + K.epsilon())
     return precision
 
@@ -90,7 +91,7 @@ opt = optimizers.Adam(
     epsilon=EPS,
     clipvalue=0.1)
 
-model.compile(loss = my_loss, optimizer = opt, metrics = [metrics.CategoricalAccuracy(), bce_metric, mse_metric, recall, precision])
+model.compile(loss = my_loss, optimizer = opt, metrics = [accuracy_metric, bce_metric, mse_metric, recall, precision])
 print(f"model compiled")
 
 x_train_input = x_train.reshape(-1, MAX_PLAY_LENGTH, 23, 11)[:,:,:,4:].reshape(-1,MAX_PLAY_LENGTH,23*7)
@@ -110,14 +111,14 @@ metrics_df_csv_string = f"./rnn_model1/stats/training_metrics"
 metrics_df.to_csv(metrics_df_csv_string)
 
 x_val_input = x_val.reshape(-1, MAX_PLAY_LENGTH, 23, 11)[:,:,:,4:].reshape(-1,MAX_PLAY_LENGTH,23*7)
-val_loss, cat_acc, val_bce, val_mse, val_recall, val_precision = model.evaluate(x_val_input, y_val, verbose=2)
+val_loss, val_accuracy, val_bce, val_mse, val_recall, val_precision = model.evaluate(x_val_input, y_val, verbose=2)
 
-val_df = pd.DataFrame([[val_loss, cat_acc, val_bce, val_mse, val_recall, val_precision]], columns=['val_loss', 'cat_acc', 'val_bce', 'val_mse', 'val_recall', 'val_precision'])
+val_df = pd.DataFrame([[val_loss, val_accuracy, val_bce, val_mse, val_recall, val_precision]], columns=['val_loss', 'cat_acc', 'val_bce', 'val_mse', 'val_recall', 'val_precision'])
 val_df_csv_string = f"./rnn_model1/stats/val_metrics"
 val_df.to_csv(val_df_csv_string)
 
 print(f"val loss = {val_loss}")
-print(f"categorical accuracy = {cat_acc}")
+print(f"val accuracy = {val_accuracy}")
 print(f"val_bce = {val_bce}")
 print(f"val_mse = {val_mse}")
 print(f"val_recall = {val_recall}")
