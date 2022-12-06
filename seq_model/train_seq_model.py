@@ -1,0 +1,124 @@
+import pandas as pd
+import numpy as np
+
+import tensorflow as tf
+import tensorflow.keras.layers as tfl
+
+from tensorflow.keras.models import Model
+import tensorflow.keras.optimizers as optimizers
+import tensorflow.keras.metrics as metrics
+
+import keras.backend as K
+
+def my_loss(y_true, y_pred):
+    bce = tf.keras.losses.CategoricalCrossentropy(from_logits=False)
+    mse = tf.keras.losses.MeanSquaredError()
+    #tf.print(y_true)
+    true = K.reshape(y_true, (-1, y_true.shape[-1]))
+    #tf.print(true)
+    pred = K.reshape(y_pred, (-1, y_pred.shape[-1]))
+    return bce(true[:,0:-1], pred[:,0:-1]) + mse(true[:,-1], pred[:,-1])
+
+def bce_metric(y_true, y_pred):
+    true = K.reshape(y_true, (-1, y_true.shape[-1]))
+    pred = K.reshape(y_pred, (-1, y_pred.shape[-1]))
+    return K.mean(K.binary_crossentropy(true[:,0:-1], pred[:,0:-1], from_logits=False))
+
+def mse_metric(y_true, y_pred):
+    true = K.reshape(y_true, (-1, y_true.shape[-1]))
+    pred = K.reshape(y_pred, (-1, y_pred.shape[-1]))
+    return K.mean(K.square(true[:,-1] - pred[:,-1]), axis=-1)
+
+# https://stackoverflow.com/questions/43547402/how-to-calculate-f1-macro-in-keras
+def recall(y_true, y_pred):
+    true = K.reshape(y_true, (-1, y_true.shape[-1]))
+    pred = K.reshape(y_pred, (-1, y_pred.shape[-1]))
+    true_positives = K.sum(K.round(K.clip(true[:,1] * pred[:,1], 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(y_true[:,1], 0, 1)))
+    recall = true_positives / (possible_positives + K.epsilon())
+    return recall
+
+def precision(y_true, y_pred):
+    true = K.reshape(y_true, (-1, y_true.shape[-1]))
+    pred = K.reshape(y_pred, (-1, y_pred.shape[-1]))
+    true_positives = K.sum(K.round(K.clip(true[:,1] * pred[:,1], 0, 1)))
+    predicted_positives = K.sum(K.round(K.clip(pred[:,1], 0, 1)))
+    precision = true_positives / (predicted_positives + K.epsilon())
+    return precision
+
+def createModel(input_shape = (203, 23*7)):
+    
+    X = tfl.Input(input_shape)  # define the input to the model
+    lstm = tfl.LSTM(100, activation='tanh', recurrent_activation='tanh', return_sequences=True)(X)
+    drop = tfl.Dropout(0.2)(lstm)
+    d3 = tfl.Dense(3,activation=None)(drop)
+    permute = tfl.Permute((2,1))(d3)    # change input from (None, 203, 3) to (None, 3, 203)
+    
+    # have layer (batch_size, 3). Want to take (b, [0,1]) and turn them into probabilities, and keep (b, [2]) as time
+    # https://datascience.stackexchange.com/questions/86740/how-to-slice-an-input-in-keras
+    probs = tfl.Cropping1D(cropping=(0,1))(permute) # shape (None, 2, 203)
+    probs = tfl.Softmax(axis=1)(probs)
+    
+    time = tfl.Cropping1D(cropping=(2,0))(permute) # shape (None, 1, 203)
+    
+    # concatenate the probabilities and predicted_time_to_sack back into one layer
+    out = tfl.Concatenate(axis=1)([probs, time]) # shape (None, 3, 203)
+    out = tfl.Permute((2,1))(out) # shape (None, 203, 3)
+    
+    model = Model(inputs=X, outputs=out)        # create model
+    
+    return model
+
+x_train = np.load("./seq_data/x_train.npy")
+y_train = np.load("./seq_data/y_train.npy")
+x_val = np.load("./seq_data/x_val.npy")
+y_val= np.load("./seq_data/y_val.npy")
+
+MAX_PLAY_LENGTH = 203
+
+model = createModel()
+
+LEARNING_RATE = 0.001
+BETA_1 = 0.9
+BETA_2 = 0.999
+EPS = 1e-07
+
+opt = optimizers.Adam(
+    learning_rate=LEARNING_RATE,
+    beta_1=BETA_1,
+    beta_2=BETA_2,
+    epsilon=EPS,
+    clipvalue=0.1)
+
+model.compile(loss = my_loss, optimizer = opt, metrics = [metrics.CategoricalAccuracy(), bce_metric, mse_metric, recall, precision])
+print(f"model compiled")
+
+x_train_input = x_train.reshape(-1, MAX_PLAY_LENGTH, 23, 11)[:,:,:,4:].reshape(-1,MAX_PLAY_LENGTH,23*7)
+
+print(f"input (X) shape = {x_train_input.shape}")
+print(f"y shape = {y_train.shape}")
+
+NUM_EPOCHS = 10
+history = model.fit(x_train_input, y_train, epochs=NUM_EPOCHS, batch_size=1)
+print(f"model done training")
+
+model_string = f"./rnn_model1/weights/weights_epochs{NUM_EPOCHS}"
+model.save_weights(model_string)
+
+metrics_df = pd.DataFrame(history.history)
+metrics_df_csv_string = f"./rnn_model1/stats/training_metrics"
+metrics_df.to_csv(metrics_df_csv_string)
+
+x_val_input = x_val.reshape(-1, MAX_PLAY_LENGTH, 23, 11)[:,:,:,4:].reshape(-1,MAX_PLAY_LENGTH,23*7)
+val_loss, cat_acc, val_bce, val_mse, val_recall, val_precision = model.evaluate(x_val_input, y_val, verbose=2)
+
+val_df = pd.DataFrame([[val_loss, cat_acc, val_bce, val_mse, val_recall, val_precision]], columns=['val_loss', 'cat_acc', 'val_bce', 'val_mse', 'val_recall', 'val_precision'])
+val_df_csv_string = f"./rnn_model1/stats/val_metrics"
+val_df.to_csv(val_df_csv_string)
+
+print(f"val loss = {val_loss}")
+print(f"categorical accuracy = {cat_acc}")
+print(f"val_bce = {val_bce}")
+print(f"val_mse = {val_mse}")
+print(f"val_recall = {val_recall}")
+print(f"val_precision = {val_precision}")
