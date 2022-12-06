@@ -11,38 +11,57 @@ import tensorflow.keras.metrics as metrics
 import keras.backend as K
 
 def my_loss(y_true, y_output):
+    
+    true = K.reshape(y_true, (-1, y_true.shape[-1]))
+    output = K.reshape(y_output, (-1, y_output.shape[-1]))
+    
     bce = tf.keras.losses.CategoricalCrossentropy(from_logits=False)
     mse = tf.keras.losses.MeanSquaredError()
     
     # get mse of only true positives
     true_sack_mask = y_true[:1]==1
     # checked, mse function can take in array of length zero
-    return bce(y_true[:,0:-1], y_output[:,0:-1]) + mse(y_true[true_sack_mask], y_output[true_sack_mask])
+    return bce(true[:,0:-1], output[:,0:-1]) + mse(true[true_sack_mask], output[true_sack_mask])
 
 def bce_metric(y_true, y_output):
-    return K.mean(K.binary_crossentropy(y_true[:,0:-1], y_output[:,0:-1], from_logits=False))
+    true = K.reshape(y_true, (-1, y_true.shape[-1]))
+    output = K.reshape(y_output, (-1, y_output.shape[-1]))
+    return K.mean(K.binary_crossentropy(true[:,0:-1], output[:,0:-1], from_logits=False))
 
 def mse_metric(y_true, y_output):
+    true = K.reshape(y_true, (-1, y_true.shape[-1]))
+    output = K.reshape(y_output, (-1, y_output.shape[-1]))
     # get mse of only true positives
-    true_sack_mask = y_true[:1]==1
-    return K.mean(K.square(y_true[true_sack_mask] - y_output[true_sack_mask]), axis=-1)
+    true_sack_mask = true[:1]==1
+    if len(y_true[true_sack_mask]) == 0:
+        return 0.0
+    else:
+        return K.mean(K.square(true[true_sack_mask][:,-1] - output[true_sack_mask][:,-1]), axis=-1)
     # return K.mean(K.square(y_pred[:,-1] - y_true[:,-1]), axis=-1)
     
 def accuracy_metric(y_true, y_output):
-    preds = K.cast(K.argmax(y_output[:,0:-1], axis=-1), 'float32')
-    return K.mean(K.cast(y_true[:,1] == preds, 'float32'))
+    true = K.reshape(y_true, (-1, y_true.shape[-1]))
+    output = K.reshape(y_output, (-1, y_output.shape[-1]))
+    preds = K.cast(K.argmax(output[:,0:-1], axis=-1), 'float32')
+    return K.mean(K.cast(true[:,1] == preds, 'float32'))
 
 # https://stackoverflow.com/questions/43547402/how-to-calculate-f1-macro-in-keras
 def recall(y_true, y_output):
-    preds = K.cast(K.argmax(y_output[:,0:-1], axis=-1), 'float32')
-    true_positives = K.sum(K.round(K.clip(y_true[:,1] * preds, 0, 1)))
-    possible_positives = K.sum(K.round(K.clip(y_true[:,1], 0, 1)))
+    true = K.reshape(y_true, (-1, y_true.shape[-1]))
+    output = K.reshape(y_output, (-1, y_output.shape[-1]))
+    
+    preds = K.cast(K.argmax(output[:,0:-1], axis=-1), 'float32')
+    true_positives = K.sum(K.round(K.clip(true[:,1] * preds, 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(true[:,1], 0, 1)))
     recall = true_positives / (possible_positives + K.epsilon())
     return recall
 
 def precision(y_true, y_output):
-    preds = K.cast(K.argmax(y_output[:,0:-1], axis=-1), 'float32')
-    true_positives = K.sum(K.round(K.clip(y_true[:,1] * preds, 0, 1)))
+    true = K.reshape(y_true, (-1, y_true.shape[-1]))
+    output = K.reshape(y_output, (-1, y_output.shape[-1]))
+    
+    preds = K.cast(K.argmax(output[:,0:-1], axis=-1), 'float32')
+    true_positives = K.sum(K.round(K.clip(true[:,1] * preds, 0, 1)))
     predicted_positives = K.sum(K.round(K.clip(preds, 0, 1)))
     precision = true_positives / (predicted_positives + K.epsilon())
     return precision

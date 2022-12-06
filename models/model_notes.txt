@@ -31,6 +31,34 @@ val_mse = 1.536577820777893
 val_recall = 0.08130080252885818
 val_precision = 0.05487804859876633
 
+Fourth model
+- Same model architecture and hyperparameters but modified loss function adn evaluation metrics
+- 60 epochs
+- Percentage of validation plays with no sack = 0.947
+
+val loss = 2.8809165954589844
+categorical accuracy = 0.9253048896789551
+val_bce = 0.379198282957077
+val_mse = 2.4408814907073975
+val_recall = 0.03252032771706581
+val_precision = 0.04878048598766327
+
+90 epochs:
+val loss = 2.972132682800293
+categorical accuracy = 0.9146341681480408
+val_bce = 0.6285035014152527
+val_mse = 2.271623134613037
+val_recall = 0.06178861856460571
+val_precision = 0.0630081295967102
+
+120 epochs: 100 training accuracy
+val loss = 2.8001644611358643
+categorical accuracy = 0.9146341681480408
+val_bce = 0.7118798494338989
+val_mse = 2.012299060821533
+val_recall = 0.06178861856460571
+val_precision = 0.056910574436187744
+
 
 Will padding at beginning fix things?
 
