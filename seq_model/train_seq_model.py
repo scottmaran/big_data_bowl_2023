@@ -10,6 +10,25 @@ import tensorflow.keras.metrics as metrics
 
 import keras.backend as K
 
+
+'''
+y = (m, max_length, 3)
+'''
+# def my_loss(y_true, y_output):
+    
+#     true = K.reshape(y_true, (-1, y_true.shape[-1]))
+#     output = K.reshape(y_output, (-1, y_output.shape[-1]))
+    
+#     bce = tf.keras.losses.CategoricalCrossentropy(from_logits=False)
+#     mse = tf.keras.losses.MeanSquaredError()
+    
+#     # get mse of only true positives
+#     true_sack_mask = y_true[:1]==1
+#     # checked, mse function can take in array of length zero
+#     b = bce(true[:,0:-1], output[:,0:-1])
+#     m = mse(true[true_sack_mask][:,-1], output[true_sack_mask][:,-1])
+#     return b + m
+
 def my_loss(y_true, y_output):
     
     true = K.reshape(y_true, (-1, y_true.shape[-1]))
@@ -17,13 +36,8 @@ def my_loss(y_true, y_output):
     
     bce = tf.keras.losses.CategoricalCrossentropy(from_logits=False)
     mse = tf.keras.losses.MeanSquaredError()
-    
-    # get mse of only true positives
-    true_sack_mask = y_true[:1]==1
-    # checked, mse function can take in array of length zero
-    b = bce(true[:,0:-1], output[:,0:-1])
-    m = mse(true[true_sack_mask][:,-1], output[true_sack_mask][:,-1])
-    return b + m
+ 
+    return bce(true[:,0:-1], output[:,0:-1]) + mse(true[:,-1], output[:,-1])
 
 def bce_metric(y_true, y_output):
     true = K.reshape(y_true, (-1, y_true.shape[-1]))
@@ -31,15 +45,17 @@ def bce_metric(y_true, y_output):
     return K.mean(K.binary_crossentropy(true[:,0:-1], output[:,0:-1], from_logits=False))
 
 def mse_metric(y_true, y_output):
-    true = K.reshape(y_true, (-1, y_true.shape[-1]))
-    output = K.reshape(y_output, (-1, y_output.shape[-1]))
-    # get mse of only true positives
-    true_sack_mask = true[:1]==1
-    if len(y_true[true_sack_mask]) == 0:
-        return 0.0
-    else:
-        return K.mean(K.square(true[true_sack_mask][:,-1] - output[true_sack_mask][:,-1]), axis=-1)
-    # return K.mean(K.square(y_pred[:,-1] - y_true[:,-1]), axis=-1)
+    return K.mean(K.square(y_output[:,-1] - y_true[:,-1]), axis=-1)
+
+# def mse_metric(y_true, y_output):
+#     true = K.reshape(y_true, (-1, y_true.shape[-1]))
+#     output = K.reshape(y_output, (-1, y_output.shape[-1]))
+#     # get mse of only true positives
+#     true_sack_mask = true[:1]==1
+#     if len(y_true[true_sack_mask]) == 0:
+#         return 0.0
+#     else:
+#         return K.mean(K.square(true[true_sack_mask][:,-1] - output[true_sack_mask][:,-1]), axis=-1)
     
 def accuracy_metric(y_true, y_output):
     true = K.reshape(y_true, (-1, y_true.shape[-1]))
