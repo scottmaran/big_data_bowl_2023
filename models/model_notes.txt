@@ -1,0 +1,38 @@
+Second model
+- Input -> 50 -> 3
+- standardized data
+- 30 epochs, Loss = BCE + MSE
+    LEARNING_RATE = 0.001
+    BETA_1 = 0.9
+    BETA_2 = 0.999
+    EPS = 1e-07
+
+    loss	cat_accuracy	bce_metric	mse_metric	recall	precision
+27	0.262847	0.973287	0.020835	0.242107	0.886126	0.909048
+28	0.259754	0.973333	0.020380	0.239346	0.887515	0.909850
+29	0.256307	0.973531	0.019987	0.236305	0.883485	0.902481
+
+val loss = 2.442511558532715
+categorical accuracy = 0.8809427618980408
+val_bce = 1.0245460271835327
+val_mse = 1.3971835374832153
+val_recall = 0.003109235316514969
+val_precision = 0.015891093760728836
+
+Second model, with unnormalized features
+- Same results
+
+Third model
+- Same model architecture and hyperparameters but used small dataset. 50 epochs
+val loss = 2.186764717102051
+categorical accuracy = 0.8699377179145813
+val_bce = 0.6092170476913452
+val_mse = 1.536577820777893
+val_recall = 0.08130080252885818
+val_precision = 0.05487804859876633
+
+
+Will padding at beginning fix things?
+
+
+
