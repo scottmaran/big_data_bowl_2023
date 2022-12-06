@@ -21,7 +21,9 @@ def my_loss(y_true, y_output):
     # get mse of only true positives
     true_sack_mask = y_true[:1]==1
     # checked, mse function can take in array of length zero
-    return bce(true[:,0:-1], output[:,0:-1]) + mse(true[true_sack_mask][:,-1], output[true_sack_mask][:,-1])
+    b = bce(true[:,0:-1], output[:,0:-1])
+    m = mse(true[true_sack_mask][:,-1], output[true_sack_mask][:,-1])
+    return b + m
 
 def bce_metric(y_true, y_output):
     true = K.reshape(y_true, (-1, y_true.shape[-1]))
