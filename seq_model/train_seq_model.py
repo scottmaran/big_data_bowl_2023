@@ -107,10 +107,10 @@ def createModel(input_shape = (203, 23*7)):
     
     return model
 
-x_train = np.load("./seq_data/x_train.npy")
-y_train = np.load("./seq_data/y_train.npy")
-x_val = np.load("./seq_data/x_val.npy")
-y_val= np.load("./seq_data/y_val.npy")
+x_train = np.load("./seq_unnorm_data/x_train.npy")
+y_train = np.load("./seq_unnorm_data/y_train.npy")
+x_val = np.load("./seq_unnorm_data/x_val.npy")
+y_val= np.load("./seq_unnorm_data/y_val.npy")
 
 MAX_PLAY_LENGTH = 203
 
@@ -137,22 +137,22 @@ print(f"input (X) shape = {x_train_input.shape}")
 print(f"y shape = {y_train.shape}")
 
 NUM_EPOCHS = 10
-BATCH_SIZE = 16
+BATCH_SIZE = 32
 history = model.fit(x_train_input, y_train, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE)
 print(f"model done training")
 
-model_string = f"./rnn_model1/weights/weights_epochs{NUM_EPOCHS}"
+model_string = f"./rnn_model_unnorm/weights/weights_epochs{NUM_EPOCHS}"
 model.save_weights(model_string)
 
 metrics_df = pd.DataFrame(history.history)
-metrics_df_csv_string = f"./rnn_model1/stats/training_metrics"
+metrics_df_csv_string = f"./rnn_model_unnorm/stats/training_metrics"
 metrics_df.to_csv(metrics_df_csv_string)
 
 x_val_input = x_val.reshape(-1, MAX_PLAY_LENGTH, 23, 11)[:,:,:,4:].reshape(-1,MAX_PLAY_LENGTH,23*7)
 val_loss, val_accuracy, val_bce, val_mse, val_recall, val_precision = model.evaluate(x_val_input, y_val, verbose=2)
 
 val_df = pd.DataFrame([[val_loss, val_accuracy, val_bce, val_mse, val_recall, val_precision]], columns=['val_loss', 'cat_acc', 'val_bce', 'val_mse', 'val_recall', 'val_precision'])
-val_df_csv_string = f"./rnn_model1/stats/val_metrics"
+val_df_csv_string = f"./rnn_model_unnorm/stats/val_metrics"
 val_df.to_csv(val_df_csv_string)
 
 print(f"val loss = {val_loss}")

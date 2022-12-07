@@ -61,6 +61,7 @@ val_precision = 0.056910574436187744
 
 
 Will padding at beginning fix things?
+rnn_model1
 
 
 
