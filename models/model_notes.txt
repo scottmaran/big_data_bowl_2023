@@ -63,5 +63,18 @@ val_precision = 0.056910574436187744
 Will padding at beginning fix things?
 rnn_model1
 
+rnn_model_unnorm
+- Bad only predicted constant small probability of sack, never predicted yes
 
+rnn_bigger
+- Extra dense layer
 
+Fifth model (trying again)
+- LOWERING THE LEARNING RATE HELPED. Val precision and recall go from zero to positive (still small)
+- After 20 epochs, with learning rate = 0.000001 and scheduler
+    val loss = 4.514001846313477
+    categorical accuracy = 0.7339938879013062
+    val_bce = 0.5216765999794006
+    val_mse = 3.9019994735717773
+    val_recall = 0.319918692111969
+    val_precision = 0.0699116513133049

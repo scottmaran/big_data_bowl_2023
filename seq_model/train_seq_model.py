@@ -88,8 +88,9 @@ def createModel(input_shape = (203, 23*7)):
     
     X = tfl.Input(input_shape)  # define the input to the model
     lstm = tfl.LSTM(100, activation='tanh', recurrent_activation='tanh', return_sequences=True)(X)
-    drop = tfl.Dropout(0.2)(lstm)
-    d3 = tfl.Dense(3,activation=None)(drop)
+    #drop = tfl.Dropout(0.2)(lstm)
+    d2 = tfl.Dense(50,activation=None)(lstm)
+    d3 = tfl.Dense(3,activation=None)(d2)
     permute = tfl.Permute((2,1))(d3)    # change input from (None, 203, 3) to (None, 3, 203)
     
     # have layer (batch_size, 3). Want to take (b, [0,1]) and turn them into probabilities, and keep (b, [2]) as time
@@ -116,7 +117,7 @@ MAX_PLAY_LENGTH = 203
 
 model = createModel()
 
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.000001
 BETA_1 = 0.9
 BETA_2 = 0.999
 EPS = 1e-07
@@ -128,7 +129,19 @@ opt = optimizers.Adam(
     epsilon=EPS,
     clipvalue=0.1)
 
-model.compile(loss = my_loss, optimizer = opt, metrics = [accuracy_metric, bce_metric, mse_metric, recall, precision])
+# Better optimizer
+lr_schedule = optimizers.schedules.ExponentialDecay(
+    initial_learning_rate=LEARNING_RATE,
+    decay_steps=10000,
+    decay_rate=0.9)
+
+scheduled_opt = optimizers.Adam(
+    learning_rate=lr_schedule,
+    beta_1=BETA_1,
+    beta_2=BETA_2,
+    epsilon=EPS)
+
+model.compile(loss = my_loss, optimizer = scheduled_opt, metrics = [accuracy_metric, bce_metric, mse_metric, recall, precision])
 print(f"model compiled")
 
 x_train_input = x_train.reshape(-1, MAX_PLAY_LENGTH, 23, 11)[:,:,:,4:].reshape(-1,MAX_PLAY_LENGTH,23*7)
@@ -136,9 +149,9 @@ x_train_input = x_train.reshape(-1, MAX_PLAY_LENGTH, 23, 11)[:,:,:,4:].reshape(-
 print(f"input (X) shape = {x_train_input.shape}")
 print(f"y shape = {y_train.shape}")
 
-NUM_EPOCHS = 2
+NUM_EPOCHS = 10
 BATCH_SIZE = 32
-history = model.fit(x_train_input, y_train, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE)
+history = model.fit(x_train_input, y_train, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, validation_data=(x_val, y_val))
 print(f"model done training")
 
 model_string = f"./rnn_model_unnorm/weights/weights_epochs{NUM_EPOCHS}"
