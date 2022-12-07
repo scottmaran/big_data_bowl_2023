@@ -145,13 +145,14 @@ model.compile(loss = my_loss, optimizer = scheduled_opt, metrics = [accuracy_met
 print(f"model compiled")
 
 x_train_input = x_train.reshape(-1, MAX_PLAY_LENGTH, 23, 11)[:,:,:,4:].reshape(-1,MAX_PLAY_LENGTH,23*7)
+x_val_input = x_val.reshape(-1, MAX_PLAY_LENGTH, 23, 11)[:,:,:,4:].reshape(-1,MAX_PLAY_LENGTH,23*7)
 
 print(f"input (X) shape = {x_train_input.shape}")
 print(f"y shape = {y_train.shape}")
 
 NUM_EPOCHS = 10
 BATCH_SIZE = 32
-history = model.fit(x_train_input, y_train, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, validation_data=(x_val, y_val))
+history = model.fit(x_train_input, y_train, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, validation_data=(x_val_input, y_val))
 print(f"model done training")
 
 model_string = f"./rnn_model_unnorm/weights/weights_epochs{NUM_EPOCHS}"
@@ -161,7 +162,6 @@ metrics_df = pd.DataFrame(history.history)
 metrics_df_csv_string = f"./rnn_model_unnorm/stats/training_metrics"
 metrics_df.to_csv(metrics_df_csv_string)
 
-x_val_input = x_val.reshape(-1, MAX_PLAY_LENGTH, 23, 11)[:,:,:,4:].reshape(-1,MAX_PLAY_LENGTH,23*7)
 val_loss, val_accuracy, val_bce, val_mse, val_recall, val_precision = model.evaluate(x_val_input, y_val, verbose=2)
 
 val_df = pd.DataFrame([[val_loss, val_accuracy, val_bce, val_mse, val_recall, val_precision]], columns=['val_loss', 'cat_acc', 'val_bce', 'val_mse', 'val_recall', 'val_precision'])
