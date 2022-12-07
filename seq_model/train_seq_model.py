@@ -136,7 +136,7 @@ x_train_input = x_train.reshape(-1, MAX_PLAY_LENGTH, 23, 11)[:,:,:,4:].reshape(-
 print(f"input (X) shape = {x_train_input.shape}")
 print(f"y shape = {y_train.shape}")
 
-NUM_EPOCHS = 10
+NUM_EPOCHS = 2
 BATCH_SIZE = 32
 history = model.fit(x_train_input, y_train, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE)
 print(f"model done training")
