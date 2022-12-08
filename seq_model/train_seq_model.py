@@ -150,7 +150,7 @@ x_val_input = x_val.reshape(-1, MAX_PLAY_LENGTH, 23, 11)[:,:,:,4:].reshape(-1,MA
 print(f"input (X) shape = {x_train_input.shape}")
 print(f"y shape = {y_train.shape}")
 
-NUM_EPOCHS = 10
+NUM_EPOCHS = 4
 BATCH_SIZE = 32
 history = model.fit(x_train_input, y_train, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, validation_data=(x_val_input, y_val))
 print(f"model done training")
