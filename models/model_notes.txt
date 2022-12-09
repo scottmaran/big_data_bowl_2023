@@ -78,3 +78,9 @@ Fifth model (trying again)
     val_mse = 3.9019994735717773
     val_recall = 0.319918692111969
     val_precision = 0.0699116513133049
+
+RNN seq model w/ lower learning rate
+    val recall = 0.4673149287700653
+    val precision = 0.080423504114151
+
+

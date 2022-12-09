@@ -1,3 +1,7 @@
+''' 
+Python file to train and save LSTM sack model
+'''
+
 import pandas as pd
 import numpy as np
 

@@ -1,16 +1,15 @@
-
-
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import animation
 import matplotlib.patches as patches
 
+import pandas as pd
+
 from IPython.display import HTML
 
-
-'''
-Class to animate plays from processed data
+''' 
+Class to animate play with predictions
 '''
 class AnimateFeature():
     
@@ -24,11 +23,13 @@ class AnimateFeature():
         self.start_y = 53.3
         self.play_df = play_df
         self.frames_list = play_df.frameId.unique()
-        self.games_df = pd.read_csv("data/games.csv")
+        self.games_df = pd.read_csv("~/Documents/Python/nfl-big-data-bowl-2023/data/games.csv")
         self.predictions = True
         self.displayNumbers = displayNumbers
+        self.FIG_HEIGHT = 4
+        self.FIG_WIDTH = 8
         
-        fig, ax = plt.subplots(1, figsize=(8,4))
+        fig, ax = plt.subplots(1, figsize=(self.FIG_WIDTH, self.FIG_HEIGHT))
         
         self.fig = fig
         self.field_ax = ax
@@ -66,7 +67,9 @@ class AnimateFeature():
         self.scat_away = self.ax_away.scatter([], [], s=50, color='red')
         
         # create box for prediction
-        self.scat_pred = self.ax_pred.text(0, 0, '', c = 'white')
+        self.scat_pred = self.ax_pred.text(0, 0, '', fontsize = self.FIG_WIDTH, 
+                                           bbox=dict(boxstyle="square", facecolor="white"),
+                                           horizontalalignment = 'left', verticalalignment = 'top', c = 'black')
         
         # add direction stats and jersey numbers/names
         self._scat_jersey_list = []
@@ -111,9 +114,10 @@ class AnimateFeature():
                 
         # add prediction
         if self.predictions != None:
-            cat = time_df.pred_cat.values[0]
-            time = time_df.pred_time.values[0]
-            set_str = f"Sack = {cat}, time = {time}"
+            sack_prob = np.round(time_df.sack_prob.values[0], 3)
+            time = np.round(time_df.pred_time.values[0], 3)
+            true_sack = time_df.true_sack.values[0]
+            set_str = f"Sack = {true_sack}, P(sack) = {sack_prob}, time = {time}"
             self.scat_pred.set_text(set_str)
         
         #add direction and jersey info
@@ -227,8 +231,7 @@ class AnimateFeature():
     @staticmethod
     def deg_to_rad(deg):
         return deg*np.pi/180
-
-
+        
 
 
 ''' 
