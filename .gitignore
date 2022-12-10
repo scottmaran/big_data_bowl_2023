@@ -13,5 +13,6 @@ cleaned_data/
 data/
 cs230_reports/
 unnormalized_data/
+unnorm_no_shuffle_data/
 seq_model/seq_data/
 seq_model/seq_unnorm_data/
